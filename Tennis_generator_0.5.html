@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Tenis Manager PRO</title>
+    <style>
+        :root {
+            --p: #2ecc71; /* Zielony akcent */
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --txt: #2c3e50;
+            --input-bg: #ffffff;
+            --border: #cccccc;
+        }
+        
+        /* Ciemny Motyw */
+        body.dark {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --txt: #e0e0e0;
+            --input-bg: #2d2d2d;
+            --border: #444444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--txt);
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 80px; /* Miejsce na scroll */
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Przyciski i Interfejs */
+        button {
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:active { opacity: 0.7; }
+        
+        .btn-primary { background: var(--p); color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-info { background: #3498db; color: white; }
+        .btn-action { width: 100%; margin-top: 10px; padding: 15px; font-size: 16px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--txt);
+            font-size: 16px; /* Zapobiega zoomowi na iOS */
+            box-sizing: border-box;
+        }
+
+        /* Nawigacja */
+        .nav-container {
+            display: flex;
+            gap: 5px;
+            background: var(--card-bg);
+            padding: 5px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .nav-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--txt);
+        }
+        .nav-btn.active {
+            background: var(--p);
+            color: white;
+        }
+
+        /* Sekcje */
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Karty w edytorze */
+        .editor-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Tryb Gry */
+        .hand-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .game-card {
+            background: var(--card-bg);
+            border: 2px solid var(--p);
+            border-radius: 8px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Fullscreen Overlay */
+        #fullscreen {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+        /* Dark Mode Toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 2px solid var(--p);
+            font-size: 24px;
+            z-index: 999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+
+    <div class="nav-container">
+        <button class="nav-btn active" onclick="showSection('setup', this)">OPCJE</button>
+        <button class="nav-btn" onclick="showSection('deck', this)">TALIA</button>
+        <button class="nav-btn" onclick="showSection('play', this)">GRAJ</button>
+    </div>
+
+    <div id="setup" class="section active">
+        <h3>Ustawienia Gry</h3>
+        <label>Limit Talii (ilość kart):</label>
+        <input type="number" id="maxDeckSize" value="60" onchange="saveConfig()">
+
+        <label>Co ze stosem odrzuconych?</label>
+        <select id="discardRule" onchange="saveConfig()">
+            <option value="reset">Wracają do talii po secie</option>
+            <option value="keep">Zostają odrzucone do końca gry</option>
+        </select>
+
+        <hr style="border-top:1px solid var(--border); margin: 20px 0;">
+
+        <h3>Kategorie Kart (Typy)</h3>
+        <p style="font-size: 12px; opacity: 0.7">Tutaj ustalasz limity. Np. "Specjalna" - limit 2 (automat nie dobierze więcej niż 2 takie karty losując rękę).</p>
+        
+        <div id="typesList"></div>
+        <button class="btn-primary btn-action" onclick="addType()">+ DODAJ NOWĄ KATEGORIĘ</button>
+
+        <div style="margin-top: 30px; display: flex; gap: 10px;">
+            <button class="btn-info" style="flex:1" onclick="exportData()">Zapisz do pliku</button>
+            <button class="btn-info" style="flex:1" onclick="importData()">Wczytaj plik</button>
+        </div>
+        <input type="file" id="importFile" style="display:none" onchange="processImport(this)">
+    </div>
+
+    <div id="deck" class="section">
+        <div style="background: var(--card-bg); padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; border-left: 5px solid var(--p);">
+            Status talii: <span id="deckStatus">0 / 60</span>
+        </div>
+        
+        <div id="cardsList"></div>
+        <button class="btn-primary btn-action" onclick="addCard()">+ DODAJ KARTĘ</button>
+    </div>
+
+    <div id="play" class="section">
+        <div id="draftStage">
+            <h3>Wybierz 2 karty startowe:</h3>
+            <div id="draftList" style="max-height: 60vh; overflow-y: auto; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border);"></div>
+            <button class="btn-primary btn-action" onclick="startPlay()">LOSUJ 8 I GRAJ</button>
+        </div>
+
+        <div id="gameStage" style="display:none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0">Twoja Ręka</h3>
+                <button class="btn-danger" onclick="resetSet()">RESET SETA</button>
+            </div>
+            
+            <div class="hand-grid" id="hand"></div>
+            
+            <div style="margin-top: 20px; padding: 10px; background: var(--input-bg); border-radius: 8px; text-align: center; border: 1px solid var(--border);">
+                Karty na stosie odrzuconych: <strong id="discardCount">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullscreen">
+        <div id="fsType" style="color: var(--p); text-transform: uppercase; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px;">TYP</div>
+        <h1 id="fsName" style="font-size: 32px; margin: 5px 0;">Nazwa Karty</h1>
+        <div id="fsStats" style="font-size: 24px; color: #e67e22; margin: 20px 0; font-weight: bold;">STATYSTYKI</div>
+        <p id="fsDesc" style="font-size: 18px; line-height: 1.5; max-width: 300px;">Opis działania karty...</p>
+        
+        <div style="margin-top: 40px; width: 100%; display: flex; flex-direction: column; gap: 15px;">
+            <button class="btn-danger btn-action" onclick="discardFromFS()">ZAGRAJ / ODRZUĆ</button>
+            <button style="background: #7f8c8d; color: white;" class="btn-action" onclick="closeFS()">Anuluj (Wróć do ręki)</button>
+        </div>
+    </div>
+
+<script>
+    // --- GŁÓWNA KONFIGURACJA I DANE ---
+    // Pobieramy dane z pamięci telefonu (jeśli istnieją) lub tworzymy domyślne
+    let config = JSON.parse(localStorage.getItem('tennis_app_data')) || {
+        maxSize: 60,
+        discardRule: 'reset',
+        types: [
+            {id: 1, name: 'Zwykła', limit: 8},
+            {id: 2, name: 'Specjalna', limit: 2}
+        ],
+        cards: []
+    };
+
+    // Stan gry (tymczasowy, resetowany po odświeżeniu)
+    let state = {
+        hand: [],
+        deck: [],
+        discard: [],
+        activeCardIdx: null
+    };
+
+    // --- ZARZĄDZANIE MOTYWEM (DARK MODE) ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('tennis_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
+    // Przywróć motyw po odświeżeniu
+    if(localStorage.getItem('tennis_theme') === 'dark') {
+        document.body.classList.add('dark');
+    }
+
+    // --- FUNKCJE ZAPISU I NAWIGACJI ---
+    function saveConfig() {
+        // Pobieramy wartości z inputów globalnych
+        const sizeInput = document.getElementById('maxDeckSize');
+        if(sizeInput) config.maxSize = parseInt(sizeInput.value);
+        
+        const ruleInput = document.getElementById('discardRule');
+        if(ruleInput) config.discardRule = ruleInput.value;
+
+        // Zapisujemy do pamięci przeglądarki
+        localStorage.setItem('tennis_app_data', JSON.stringify(config));
+        
+        // Odświeżamy widok
+        renderAll();
+    }
+
+    function showSection(id, btn) {
+        // Ukryj wszystkie sekcje
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+        
+        // Pokaż wybraną
+        document.getElementById(id).classList.add('active');
+        if(btn) btn.classList.add('active');
+
+        // Jeśli wchodzimy do gry, odśwież listę wyboru (draft)
+        if(id === 'play') setupDraft();
+    }
+
+    // --- LOGIKA KATEGORII (TYPÓW) ---
+    function addType() {
+        config.types.push({
+            id: Date.now(), 
+            name: 'Nowa Kategoria', 
+            limit: 2
+        });
+        saveConfig();
+    }
+
+    function removeType(id) {
+        if(config.types.length <= 1) return alert("Musisz mieć przynajmniej jedną kategorię!");
+        // Sprawdź czy są karty przypisane do tego typu
+        const isUsed = config.cards.some(c => c.typeId == id);
+        if(isUsed) return alert("Najpierw usuń lub zmień karty przypisane do tej kategorii!");
+        
+        config.types = config.types.filter(t => t.id !== id);
+        saveConfig();
+    }
+
+    function updateType(id, field, value) {
+        const type = config.types.find(t => t.id === id);
+        if(type) {
+            type[field] = field === 'limit' ? parseInt(value) : value;
+            saveConfig(); // Zapisujemy, ale bez przerysowania wszystkiego żeby nie gubić focusa
+        }
+    }
+
+    // --- LOGIKA KART ---
+    function addCard() {
+        if(config.types.length === 0) return alert("Najpierw dodaj kategorię w Opcjach!");
+        
+        config.cards.push({
+            id: Date.now(),
+            name: 'Nowa Karta',
+            typeId: config.types[0].id,
+            stats: '+0 Siły',
+            desc: 'Opis...',
+            count: 1
+        });
+        saveConfig();
+    }
+
+    function removeCard(id) {
+        if(confirm("Na pewno usunąć tę kartę?")) {
+            config.cards = config.cards.filter(c => c.id !== id);
+            saveConfig();
+        }
+    }
+
+    function updateCard(id, field, value) {
+        const card = config.cards.find(c => c.id === id);
+        if(card) {
+            card[field] = field === 'count' ? parseInt(value) : value;
+            // Tutaj nie wywołujemy saveConfig() z renderem, żeby nie przerywać pisania
+            localStorage.setItem('tennis_app_data', JSON.stringify(config));
+            
+            // Tylko jeśli zmieniamy ilość sztuk, odśwież licznik talii
+            if(field === 'count') updateDeckStatus();
+        }
+    }
+
+    function updateDeckStatus() {
+        let total = config.cards.reduce((sum, c) => sum + (parseInt(c.count)||0), 0);
+        document.getElementById('deckStatus').innerText = `${total} / ${config.maxSize}`;
+    }
+
+    // --- RENDEROWANIE (TWORZENIE WIDOKU) ---
+    function renderAll() {
+        // 1. Render Typów
+        const typesDiv = document.getElementById('typesList');
+        typesDiv.innerHTML = '';
+        
+        config.types.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'editor-card';
+            div.innerHTML = `
+                <label>Nazwa:</label>
+                <input type="text" value="${t.name}" onchange="updateType(${t.id}, 'name', this.value)">
+                <label>Limit w losowaniu ręki:</label>
+                <input type="number" value="${t.limit}" onchange="updateType(${t.id}, 'limit', this.value)">
+                <button class="btn-danger" style="width:100%; margin-top:10px" onclick="removeType(${t.id})">USUŃ KATEGORIĘ</button>
+            `;
+            typesDiv.appendChild(div);
+        });
+
+        // 2. Render Kart
+        const cardsDiv = document.getElementById('cardsList');
+        cardsDiv.innerHTML = '';
+        
+        config.cards.forEach(c => {
+            // Bezpieczne pobranie nazwy typu
+            const typeObj = config.types.find(t => t.id == c.typeId);
+            const isTypeValid = typeObj ? true : false;
+            
+            const div = document.createElement('div');
+            div.className = 'editor-card';
+            
+            // Budowanie selecta (listy rozwijanej)
+            let optionsHTML = config.types.map(t => 
+                `<option value="${t.id}" ${t.id == c.typeId ? 'selected' : ''}>${t.name}</option>`
+            ).join('');
+
+            div.innerHTML = `
+                <input style="font-weight:bold; font-size:18px;" value="${c.name}" onchange="updateCard(${c.id}, 'name', this.value)" placeholder="Nazwa Karty">
+                
+                <label>Kategoria:</label>
+                <select onchange="updateCard(${c.id}, 'typeId', this.value)">${optionsHTML}</select>
+                
+                <input value="${c.stats}" onchange="updateCard(${c.id}, 'stats', this.value)" placeholder="Statystyki (np. Koszt 4)">
+                <textarea onchange="updateCard(${c.id}, 'desc', this.value)" rows="2" placeholder="Opis działania...">${c.desc}</textarea>
+                
+                <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+                    <label>Ilość sztuk:</label>
+                    <input type="number" value="${c.count}" onchange="updateCard(${c.id}, 'count', this.value)" style="width:60px">
+                </div>
+
+                <button class="btn-danger" style="width:100%; margin-top:10px" onclick="removeCard(${c.id})">USUŃ KARTĘ</button>
+            `;
+            cardsDiv.appendChild(div);
+        });
+
+        // 3. Statusy globalne
+        document.getElementById('maxDeckSize').value = config.maxSize;
+        document.getElementById('discardRule').value = config.discardRule;
+        updateDeckStatus();
+    }
+
+    // --- ROZGRYWKA: DRAFT I SILNIK ---
+    function setupDraft() {
+        const list = document.getElementById('draftList');
+        list.innerHTML = '';
+        
+        if(config.cards.length === 0) {
+            list.innerHTML = '<p style="text-align:center">Brak kart! Dodaj je najpierw w zakładce TALIA.</p>';
+            return;
+        }
+
+        config.cards.forEach(c => {
+            const typeName = config.types.find(t => t.id == c.typeId)?.name || 'Brak typu';
+            
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.padding = '10px';
+            label.style.borderBottom = '1px solid var(--border)';
+            
+            label.innerHTML = `
+                <input type="checkbox" class="draft-check" data-id="${c.id}" style="width:24px; height:24px; margin-right:15px; flex-shrink:0;">
+                <div>
+                    <div style="font-weight:bold">${c.name}</div>
+                    <div style="font-size:12px; color:gray">${typeName}</div>
+                </div>
+            `;
+            list.appendChild(label);
+        });
+    }
+
+    function startPlay() {
+        const checkboxes = document.querySelectorAll('.draft-check:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+        
+        if(selectedIds.length > 10) return alert("Możesz wybrać maksymalnie 10 kart!"); // Zabezpieczenie, choć logika mówi 2
+        
+        // 1. Tworzymy "fizyczną" talię (rozmnażamy karty wg ilości sztuk)
+        let fullDeck = [];
+        config.cards.forEach(c => {
+            const count = parseInt(c.count) || 0;
+            for(let i=0; i<count; i++) {
+                fullDeck.push({...c}); // Kopia obiektu karty
+            }
+        });
+
+        if(fullDeck.length < 10) return alert("Talia jest za mała! Musi mieć min. 10 kart łącznie.");
+
+        state.hand = [];
+
+        // 2. Wyciągamy wybrane pewniaki
+        selectedIds.forEach(id => {
+            const idx = fullDeck.findIndex(c => c.id === id);
+            if(idx > -1) {
+                state.hand.push(fullDeck.splice(idx, 1)[0]);
+            }
+        });
+
+        // 3. Tasujemy resztę
+        fullDeck.sort(() => Math.random() - 0.5);
+
+        // 4. Dobieramy do 10 pilnując limitów
+        // Liczymy ile mamy kart każdego typu na ręce (z tych wybranych)
+        let typeCounts = {};
+        config.types.forEach(t => {
+            typeCounts[t.id] = state.hand.filter(h => h.typeId == t.id).length;
+        });
+
+        // Pętla po talii
+        for(let i=0; i < fullDeck.length; i++) {
+            if(state.hand.length >= 10) break; // Mamy komplet
+            
+            let card = fullDeck[i];
+            let typeLimit = config.types.find(t => t.id == card.typeId)?.limit || 99;
+            
+            // Jeśli nie przekroczyliśmy limitu dla tego typu karty
+            if(typeCounts[card.typeId] < typeLimit) {
+                state.hand.push(fullDeck.splice(i, 1)[0]); // Przenieś z talii do ręki
+                typeCounts[card.typeId]++;
+                i--; // Cofamy licznik pętli bo usunęliśmy element
+            }
+        }
+
+        // 5. Jeśli limity są za ostre i nie mamy 10 kart -> dobieramy cokolwiek z reszty
+        while(state.hand.length < 10 && fullDeck.length > 0) {
+            state.hand.push(fullDeck.pop());
+        }
+
+        state.deck = fullDeck; // Reszta zostaje w talii
+        
+        // Przełącz widok
+        document.getElementById('draftStage').style.display = 'none';
+        document.getElementById('gameStage').style.display = 'block';
+        renderHand();
+    }
+
+    function renderHand() {
+        const handDiv = document.getElementById('hand');
+        handDiv.innerHTML = '';
+        
+        state.hand.forEach((c, index) => {
+            const div = document.createElement('div');
+            div.className = 'game-card';
+            div.innerText = c.name;
+            div.onclick = () => openFullscreen(index);
+            handDiv.appendChild(div);
+        });
+
+        document.getElementById('discardCount').innerText = state.discard.length;
+    }
+
+    function resetSet() {
+        if(confirm("Zakończyć set?")) {
+            if(config.discardRule === 'reset') {
+                // Wszystko wraca do talii
+                state.deck = [...state.deck, ...state.hand, ...state.discard];
+                state.discard = [];
+            } else {
+                // Tylko to co w ręce i w talii wraca do losowania, discard zostaje martwy
+                state.deck = [...state.deck, ...state.hand];
+            }
+            
+            state.hand = [];
+            document.getElementById('gameStage').style.display = 'none';
+            document.getElementById('draftStage').style.display = 'block';
+            setupDraft(); // Odśwież listę do wyboru
+        }
+    }
+
+    // --- OBSŁUGA FULLSCREEN (PODGLĄD KARTY W GRZE) ---
+    function openFullscreen(index) {
+        state.activeCardIdx = index;
+        const c = state.hand[index];
+        const typeName = config.types.find(t => t.id == c.typeId)?.name || '';
+        
+        document.getElementById('fsName').innerText = c.name;
+        document.getElementById('fsType').innerText = typeName;
+        document.getElementById('fsStats').innerText = c.stats;
+        document.getElementById('fsDesc').innerText = c.desc;
+        
+        document.getElementById('fullscreen').style.display = 'flex';
+    }
+
+    function closeFS() {
+        document.getElementById('fullscreen').style.display = 'none';
+    }
+
+    function discardFromFS() {
+        // Usuń z ręki, dodaj do odrzuconych
+        const card = state.hand.splice(state.activeCardIdx, 1)[0];
+        state.discard.push(card);
+        
+        closeFS();
+        renderHand();
+    }
+
+    // --- EKSPORT / IMPORT (KOPIA ZAPASOWA) ---
+    function exportData() {
+        const dataStr = JSON.stringify(config);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "tenis_talia_backup.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function importData() {
+        document.getElementById('importFile').click();
+    }
+
+    function processImport(input) {
+        const file = input.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                // Prosta walidacja
+                if(imported.cards && imported.types) {
+                    config = imported;
+                    saveConfig();
+                    alert("Talia wczytana pomyślnie!");
+                } else {
+                    alert("Błąd: To nie jest plik z talią.");
+                }
+            } catch(err) {
+                alert("Błąd odczytu pliku JSON");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // Start
+    renderAll();
+</script>
+</body>
+</html>
