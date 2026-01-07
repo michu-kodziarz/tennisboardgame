@@ -2,372 +2,355 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tenis TCG - Generator</title>
     <style>
+        /* --- KOLORYSTYKA (SOCZYSTA I CZYTELNA) --- */
         :root {
-            --p: #27ae60; /* Ciemniejsza zieleń - bardziej pro */
-            --bg: #f5f6fa;
+            --bg: #f4f4f9;
             --card-bg: #ffffff;
-            --txt: #2f3640;
-            --border: #dcdde1;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--txt);
-            margin: 0;
-            padding: 10px;
-            padding-bottom: 100px;
+            --text: #333333;
+            --border: #e0e0e0;
+            
+            /* Pełne, ładne kolory */
+            --green: #27ae60;
+            --green-glow: #2ecc71;
+            --blue: #2980b9;
+            --red: #c0392b;
+            --dark: #2c3e50;
         }
 
-        /* Sekcje i Nawigacja */
-        .nav-bar {
+        body.dark-mode {
+            --bg: #121212; /* Ciemny, ale nie smoła */
+            --card-bg: #1e1e1e;
+            --text: #ecf0f1;
+            --border: #333333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            padding-top: 110px; /* Miejsce na nagłówek */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- NAGŁÓWEK Z PRZYCISKIEM 🌓 --- */
+        .header-fixed {
             position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #fff;
-            border-top: 1px solid #ccc;
+            top: 0; left: 0; right: 0;
+            background: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .top-bar {
             display: flex;
-            padding: 10px;
-            z-index: 100;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .app-title {
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+
+        /* Twój ulubiony przycisk */
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--green-glow);
+            color: var(--green-glow);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
+            transition: 0.2s;
+        }
+        .theme-toggle:active { transform: scale(0.95); }
+
+        /* --- ZAKŁADKI (NA GÓRZE) --- */
+        .nav-bar {
+            display: flex;
         }
         .nav-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
             background: transparent;
+            color: var(--text);
             font-weight: bold;
-            color: #7f8c8d;
-            font-size: 12px;
-            text-align: center;
+            font-size: 13px;
+            text-transform: uppercase;
+            border-bottom: 3px solid transparent;
+            opacity: 0.6;
+            transition: 0.2s;
         }
-        .nav-btn.active { color: var(--p); border-bottom: 3px solid var(--p); }
+        .nav-btn.active {
+            opacity: 1;
+            border-bottom-color: var(--green-glow);
+            color: var(--green-glow);
+        }
 
-        .section { display: none; margin-bottom: 20px; }
+        /* --- SEKCJE I KARTY --- */
+        .section { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Karty Edytora */
         .editor-card {
             background: var(--card-bg);
             border: 1px solid var(--border);
-            padding: 15px;
             border-radius: 8px;
+            padding: 15px;
             margin-bottom: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            position: relative;
-        }
-        .editor-card::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 5px;
-            background: var(--p);
-            border-top-left-radius: 8px;
-            border-bottom-left-radius: 8px;
         }
 
-        /* Formularze */
+        /* --- FORMULARZE --- */
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: #888;
+        }
+
         input, select, textarea {
             width: 100%;
-            padding: 8px;
-            margin: 5px 0 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 16px; /* Anty-zoom iOS */
+            padding: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-size: 16px;
             box-sizing: border-box;
             font-family: inherit;
         }
-        textarea { resize: vertical; }
-        
-        .effect-row {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-            margin-bottom: 5px;
+        input:focus, textarea:focus { outline: none; border-color: var(--green-glow); }
+
+        .eff-row { display: flex; gap: 5px; margin-bottom: 8px; align-items: center; }
+
+        /* --- PRZYCISKI (PEŁNE KOLORY) --- */
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+
+        .btn-green {
+            background: var(--green);
+            color: white;
+            padding: 14px;
+            width: 100%;
+            font-size: 15px;
+            margin-top: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* Przyciski */
-        button { cursor: pointer; border-radius: 4px; border: none; font-weight: 600; }
-        .btn-add { background: var(--p); color: white; padding: 10px 20px; width: 100%; font-size: 16px; }
-        .btn-danger { background: #e74c3c; color: white; padding: 5px 10px; }
-        .btn-small { background: #bdc3c7; color: #2c3e50; padding: 5px; font-size: 12px; }
-        .btn-save { background: #2980b9; color: white; padding: 15px; width: 100%; margin-top: 10px; }
+        .btn-blue {
+            background: var(--blue);
+            color: white;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+            margin-top: 5px;
+        }
 
-        h2 { margin-top: 0; font-size: 18px; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        label { font-size: 12px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+        .btn-red {
+            background: var(--red);
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-small {
+            background: var(--dark);
+            color: white;
+            padding: 8px;
+            font-size: 11px;
+            width: 100%;
+        }
+        
+        /* --- WYGLĄD SEKCJI ZAPISU --- */
+        .save-box {
+            border-left: 4px solid var(--green-glow);
+            padding-left: 10px;
+        }
+        .code-area {
+            font-family: monospace;
+            font-size: 11px;
+            background: #111;
+            color: #2ecc71;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+
     </style>
 </head>
-<body>
+<body class="dark-mode"> <div class="header-fixed">
+        <div class="top-bar">
+            <div class="app-title">WARSZTAT KART 🎾</div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌗 ZMIEŃ TRYB</button>
+        </div>
+        <div class="nav-bar">
+            <button class="nav-btn active" onclick="go('sec-cards', this)">Karty</button>
+            <button class="nav-btn" onclick="go('sec-types', this)">Kategorie</button>
+            <button class="nav-btn" onclick="go('sec-save', this)">Publikacja</button>
+        </div>
+    </div>
 
-    <div id="editor" class="section active">
-        <h2>Warsztat Kart</h2>
+    <div id="sec-cards" class="section active">
         <div id="cardsList"></div>
-        <button class="btn-add" onclick="addNewCard()">+ NOWA KARTA</button>
+        <button class="btn-green" onclick="addCard()">+ DODAJ NOWĄ KARTĘ</button>
     </div>
 
-    <div id="types" class="section">
-        <h2>Kategorie / Typy</h2>
-        <p style="font-size:12px; color:#777">Definiujesz tutaj rodzaje kart (np. Atak, Obrona) i ich limity w ręce.</p>
+    <div id="sec-types" class="section">
         <div id="typesList"></div>
-        <button class="btn-add" onclick="addType()" style="background:#f39c12">+ NOWA KATEGORIA</button>
+        <button class="btn-green" onclick="addType()" style="background: #27ae60; color: #fff">+ DODAJ KATEGORIĘ</button>
     </div>
 
-    <div id="publish" class="section">
-        <h2>Zapisz / Udostępnij</h2>
+    <div id="sec-save" class="section">
         
-        <div class="editor-card" style="background:#eaf2f8; border:1px solid #3498db;">
-            <label style="color:#2980b9">Opcja 1: Kopia Robocza (Tylko dla Ciebie)</label>
-            <p style="font-size:13px; margin:5px 0 15px 0;">Pobierz plik na telefon. Używaj jako backupu.</p>
-            <button class="btn-save" onclick="downloadJSON()">📥 POBIERZ PLIK .JSON</button>
-            <input type="file" id="fileInput" style="display:none" onchange="loadJSON(this)">
-            <button class="btn-small" style="width:100%; margin-top:5px; background:white; border:1px solid #ccc" onclick="document.getElementById('fileInput').click()">📤 Wczytaj z pliku</button>
+        <div class="editor-card save-box">
+            <h3>🌐 Krok 1: GitHub</h3>
+            <p style="font-size:12px; opacity:0.8">Skopiuj ten kod i wklej go na stronę.</p>
+            <textarea id="out" class="code-area" rows="6" readonly></textarea>
+            <button class="btn-green" onclick="gen()">GENERUJ KOD</button>
         </div>
 
-        <div class="editor-card" style="background:#e8f8f5; border:1px solid #27ae60;">
-            <label style="color:#27ae60">Opcja 2: Publikacja (Dla kumpla)</label>
-            <p style="font-size:13px; margin:5px 0;">
-                Aby inni widzieli Twoje karty po wejściu w link:
-                1. Kliknij przycisk poniżej.
-                2. Skopiuj wygenerowany tekst.
-                3. Wejdź na GitHub, edytuj plik index.html.
-                4. Podmień sekcję "Baza Danych" na ten tekst.
-            </p>
-            <textarea id="exportArea" rows="6" readonly style="font-family:monospace; font-size:12px; background:#fff;" placeholder="Tutaj pojawi się kod..."></textarea>
-            <button class="btn-add" style="font-size:14px" onclick="generateCode()">GENERUJ KOD DLA GITHUBA</button>
+        <div class="editor-card">
+            <h3>💾 Krok 2: Backup (Pliki)</h3>
+            <p style="font-size:12px; opacity:0.8">Zapisz talię na telefonie, żeby jej nie stracić.</p>
+            
+            <button class="btn-blue" onclick="downloadJSON()">📤 POBIERZ PLIK .JSON</button>
+            
+            <div style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px">
+                <input type="file" id="fileInput" style="display:none" onchange="loadJSON(this)">
+                <button class="btn-small" style="background:#555" onclick="document.getElementById('fileInput').click()">📥 WCZYTAJ PLIK Z TELEFONU</button>
+            </div>
         </div>
-        
-        <button class="btn-danger" style="width:100%; margin-top:30px;" onclick="hardReset()">⚠️ WYCZYŚĆ WSZYSTKO (RESET)</button>
-    </div>
 
-    <div class="nav-bar">
-        <button class="nav-btn active" onclick="go('editor', this)">KARTY</button>
-        <button class="nav-btn" onclick="go('types', this)">KATEGORIE</button>
-        <button class="nav-btn" onclick="go('publish', this)">PUBLIKACJA</button>
+        <button class="btn-red" style="width:100%; padding:15px; margin-top:20px" onclick="reset()">🗑️ USUŃ WSZYSTKO (RESET)</button>
     </div>
 
 <script>
-    // --- BAZA DANYCH (To będziesz podmieniał na GitHubie) ---
-    // ▼ ▼ ▼ OD TEGO MIEJSCA ZAZNACZASZ PRZY WKLEJANIU ▼ ▼ ▼
+    // --- BAZA DANYCH ---
+    // ▼ WKLEJ KOD TUTAJ JEŚLI MASZ STARY ▼
     let db = {
-        types: [
-            {id: 1, name: 'Zwykła', limit: 8},
-            {id: 2, name: 'Specjalna', limit: 2}
-        ],
-        cards: [
-            {
-                id: 1700000000001, 
-                name: 'Przykładowy Forehand', 
-                typeId: 1, 
-                effects: ['+2 Siły', 'Wymaga: Środek kortu'], 
-                desc: '', 
-                count: 1
-            }
-        ]
+        types: [{id: 1, name: 'Atak', limit: 10}],
+        cards: []
     };
-    // ▲ ▲ ▲ DO TEGO MIEJSCA ▲ ▲ ▲
+    // ▲ KONIEC WKLEJANIA ▲
 
-    // --- LOGIKA APLIKACJI ---
+    // Ładowanie z pamięci
+    const saved = localStorage.getItem('tenis_tcg_ultimate');
+    if(saved) db = JSON.parse(saved);
 
-    // 1. Sprawdź czy mamy coś nowszego w telefonie, jeśli nie - użyj bazy z kodu
-    const localData = localStorage.getItem('tennis_gen_data');
-    if(localData) {
-        try {
-            const parsed = JSON.parse(localData);
-            // Prosta walidacja czy to nowa wersja (sprawdzamy czy są effects)
-            if(parsed.cards && parsed.cards.length > 0 && parsed.cards[0].effects) {
-                db = parsed;
-            }
-        } catch(e) { console.log('Błąd odczytu localstorage'); }
+    // Zmiana motywu
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
     }
 
-    // Funkcja zapisu do pamięci telefonu (automatyczna)
+    // Zapisywanie
     function save() {
-        localStorage.setItem('tennis_gen_data', JSON.stringify(db));
-        // Nie przerysowujemy wszystkiego, żeby nie gubić focusa przy pisaniu
+        localStorage.setItem('tenis_tcg_ultimate', JSON.stringify(db));
     }
 
     // Nawigacja
-    function go(sectionId, btn) {
+    function go(id, btn) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(sectionId).classList.add('active');
+        document.getElementById(id).classList.add('active');
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if(sectionId === 'editor') renderCards();
-        if(sectionId === 'types') renderTypes();
+        if(id === 'sec-cards') render();
+        if(id === 'sec-types') renderTypes();
     }
 
-    // --- RENDEROWANIE KART (Warsztat) ---
-    function renderCards() {
+    // Render Kart
+    function render() {
         const list = document.getElementById('cardsList');
         list.innerHTML = '';
+        [...db.cards].reverse().forEach(c => {
+            const tOpts = db.types.map(t => `<option value="${t.id}" ${t.id==c.typeId?'selected':''}>${t.name}</option>`).join('');
+            
+            const effs = c.effects.map((e, i) => `
+                <div class="eff-row">
+                    <input type="text" value="${e}" placeholder="Efekt..." oninput="updEff(${c.id},${i},this.value)">
+                    <button class="btn-red" onclick="remEff(${c.id},${i})">X</button>
+                </div>`).join('');
 
-        // Sortowanie: najpierw nowe
-        const reversedCards = [...db.cards].reverse();
-
-        reversedCards.forEach(c => {
             const div = document.createElement('div');
             div.className = 'editor-card';
-
-            // Select Typów
-            const typeOpts = db.types.map(t => 
-                `<option value="${t.id}" ${t.id == c.typeId ? 'selected' : ''}>${t.name}</option>`
-            ).join('');
-
-            // Generowanie wierszy z efektami
-            const effectsHTML = c.effects.map((eff, idx) => `
-                <div class="effect-row">
-                    <input type="text" value="${eff}" placeholder="np. +3 Siły" 
-                        oninput="updateEffect(${c.id}, ${idx}, this.value)">
-                    <button class="btn-danger" onclick="removeEffect(${c.id}, ${idx})">-</button>
-                </div>
-            `).join('');
-
             div.innerHTML = `
-                <label>Nazwa Karty</label>
-                <input type="text" value="${c.name}" placeholder="Wpisz nazwę..." 
-                    style="font-weight:bold; font-size:18px"
-                    oninput="updateVal(${c.id}, 'name', this.value)">
-
-                <div style="display:flex; gap:10px;">
-                    <div style="flex:2">
-                        <label>Kategoria</label>
-                        <select onchange="updateVal(${c.id}, 'typeId', this.value)">${typeOpts}</select>
-                    </div>
-                    <div style="flex:1">
-                        <label>Sztuk</label>
-                        <input type="number" value="${c.count}" oninput="updateVal(${c.id}, 'count', this.value)">
-                    </div>
+                <input type="text" value="${c.name}" placeholder="NAZWA KARTY" 
+                    style="font-weight:900; font-size:18px; margin-bottom:10px; border-left:4px solid var(--green-glow); padding-left:10px" 
+                    oninput="upd(${c.id},'name',this.value)">
+                
+                <div style="display:flex; gap:10px; margin-bottom:10px">
+                    <div style="flex:2"><label>Typ</label><select onchange="upd(${c.id},'typeId',this.value)">${tOpts}</select></div>
+                    <div style="flex:1"><label>Ilość</label><input type="number" value="${c.count}" oninput="upd(${c.id},'count',this.value)"></div>
                 </div>
 
-                <label style="margin-top:10px; display:block">Cechy / Efekty</label>
-                <div id="effects-${c.id}">${effectsHTML}</div>
-                <button class="btn-small" onclick="addEffect(${c.id})" style="width:100%">+ Dodaj kolejną cechę</button>
+                <label>Statystyki / Cechy</label>
+                <div>${effs}</div>
+                <button class="btn-small" style="margin-top:5px" onclick="addEff(${c.id})">+ DODAJ LINIE</button>
 
-                <label style="margin-top:15px; display:block">Opis fabularny / Dodatkowy</label>
-                <textarea rows="2" placeholder="Opcjonalny opis działania..." 
-                    oninput="updateVal(${c.id}, 'desc', this.value)">${c.desc}</textarea>
-
-                <button class="btn-danger" style="margin-top:10px; width:100%" onclick="deleteCard(${c.id})">USUŃ KARTĘ</button>
+                <label>Opis</label>
+                <textarea rows="2" oninput="upd(${c.id},'desc',this.value)">${c.desc}</textarea>
+                
+                <div style="text-align:right; margin-top:10px">
+                    <button class="btn-red" onclick="del(${c.id})">USUŃ</button>
+                </div>
             `;
             list.appendChild(div);
         });
     }
 
-    // --- LOGIKA EDYCJI ---
-    function addNewCard() {
-        if(db.types.length === 0) return alert("Najpierw dodaj przynajmniej jedną Kategorię!");
-        
-        db.cards.push({
-            id: Date.now(),
-            name: '',
-            typeId: db.types[0].id,
-            effects: [''], // Pusta lista efektów na start
-            desc: '',
-            count: 1
-        });
-        save();
-        renderCards();
-    }
+    // Logika Kart
+    function addCard() { db.cards.push({id:Date.now(), name:'', typeId:db.types[0].id, effects:[''], desc:'', count:1}); save(); render(); }
+    function upd(id, f, v) { const c = db.cards.find(x=>x.id==id); c[f]=f=='count'?parseInt(v):v; save(); }
+    function del(id) { if(confirm("Usunąć kartę?")) { db.cards=db.cards.filter(x=>x.id!=id); save(); render(); }}
+    
+    // Logika Efektów
+    function addEff(id) { db.cards.find(x=>x.id==id).effects.push(''); save(); render(); }
+    function remEff(id, i) { db.cards.find(x=>x.id==id).effects.splice(i,1); save(); render(); }
+    function updEff(id, i, v) { db.cards.find(x=>x.id==id).effects[i]=v; save(); }
 
-    function deleteCard(id) {
-        if(confirm("Usunąć tę kartę bezpowrotnie?")) {
-            db.cards = db.cards.filter(c => c.id !== id);
-            save();
-            renderCards();
-        }
-    }
-
-    function updateVal(id, field, val) {
-        const card = db.cards.find(c => c.id === id);
-        if(card) {
-            card[field] = field === 'count' ? parseInt(val) : val;
-            save();
-        }
-    }
-
-    // Obsługa efektów dynamicznych
-    function addEffect(id) {
-        const card = db.cards.find(c => c.id === id);
-        card.effects.push('');
-        save();
-        renderCards(); // Tu musimy przerysować, żeby pojawił się nowy input
-    }
-
-    function removeEffect(id, idx) {
-        const card = db.cards.find(c => c.id === id);
-        card.effects.splice(idx, 1);
-        save();
-        renderCards();
-    }
-
-    function updateEffect(id, idx, val) {
-        const card = db.cards.find(c => c.id === id);
-        card.effects[idx] = val;
-        save();
-    }
-
-    // --- KATEGORIE ---
+    // Logika Typów
     function renderTypes() {
-        const div = document.getElementById('typesList');
-        div.innerHTML = '';
-        db.types.forEach(t => {
-            div.innerHTML += `
-                <div class="editor-card" style="padding:10px">
-                    <input value="${t.name}" oninput="updType(${t.id}, 'name', this.value)" style="width:60%">
-                    Limit: <input type="number" value="${t.limit}" oninput="updType(${t.id}, 'limit', this.value)" style="width:20%">
-                    <button class="btn-danger" onclick="delType(${t.id})">X</button>
-                </div>
-            `;
-        });
+        document.getElementById('typesList').innerHTML = db.types.map(t => `
+            <div class="editor-card">
+                <label>Nazwa</label><input value="${t.name}" oninput="updTy(${t.id},'name',this.value)">
+                <label>Limit</label><input type="number" value="${t.limit}" oninput="updTy(${t.id},'limit',this.value)">
+                <button class="btn-red" style="margin-top:10px" onclick="delTy(${t.id})">USUŃ</button>
+            </div>`).join('');
     }
-    function addType() { db.types.push({id: Date.now(), name: 'Nowy Typ', limit: 2}); save(); renderTypes(); }
-    function updType(id, f, v) { const t = db.types.find(x => x.id===id); t[f]=v; save(); }
-    function delType(id) { db.types = db.types.filter(t => t.id!==id); save(); renderTypes(); }
+    function addType() { db.types.push({id:Date.now(), name:'Nowa', limit:1}); save(); renderTypes(); }
+    function updTy(id, f, v) { db.types.find(x=>x.id==id)[f]=v; save(); }
+    function delTy(id) { if(db.types.length>1) {db.types=db.types.filter(x=>x.id!=id); save(); renderTypes();}}
 
-    // --- PUBLIKACJA / EXPORT ---
+    // Publikacja / Pliki
+    function gen() { document.getElementById('out').value = `let db = ${JSON.stringify(db, null, 4)};`; }
+    function reset() { if(confirm("UWAGA: To usunie wszystko z telefonu!")) { localStorage.clear(); location.reload(); }}
+    
     function downloadJSON() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
         const a = document.createElement('a');
-        a.href = dataStr;
-        a.download = "talia_tenis.json";
-        a.click();
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        a.download = "talia_backup.json"; a.click();
     }
-
     function loadJSON(input) {
-        const file = input.files[0];
-        if(!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                db = JSON.parse(e.target.result);
-                save();
-                alert("Wczytano! Przejdź do zakładki Karty.");
-                renderCards();
-            } catch(x) { alert("Błąd pliku"); }
-        };
-        reader.readAsText(file);
+        reader.onload = (e) => { db = JSON.parse(e.target.result); save(); render(); alert("Wczytano pomyślnie!"); };
+        reader.readAsText(input.files[0]);
     }
 
-    function generateCode() {
-        // Generujemy ładny string JS
-        const json = JSON.stringify(db, null, 4); // 4 to wcięcie dla czytelności
-        const code = `let db = ${json};`;
-        document.getElementById('exportArea').value = code;
-        alert("Kod wygenerowany! Skopiuj tekst z pola poniżej.");
-    }
-
-    function hardReset() {
-        if(confirm("To usunie wszystkie dane z telefonu. Kontynuować?")) {
-            localStorage.removeItem('tennis_gen_data');
-            location.reload();
-        }
-    }
-
-    // Start
-    renderCards();
+    render();
 </script>
 </body>
 </html>
